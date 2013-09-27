@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\Search\ElasticSearch;
 
 use Doctrine\Search\ElasticSearch\Client;
+use Elastica;
 
 /**
  * @author Markus Bachmann <markus.bachmann@bachi.biz>
@@ -11,17 +12,17 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 {
     protected function setUp()
     {
-        $this->elasticaClient = $this->getMock('Elastica_Client');
+        $this->elasticaClient = $this->getMock('Elastica\Client');
         $this->client = new Client($this->elasticaClient);
     }
 
     public function testFind()
     {
-        $index = $this->getMockBuilder('Elastica_Index')
+        $index = $this->getMockBuilder('Elastica\Index')
             ->disableOriginalConstructor()
             ->getMock();
 
-        $result = $this->getMockBuilder('Elastica_ResultSet')
+        $result = $this->getMockBuilder('Elastica\ResultSet')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -40,7 +41,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testCreateIndex()
     {
-        $index = $this->getMockBuilder('Elastica_Index')
+        $index = $this->getMockBuilder('Elastica\Index')
             ->disableOriginalConstructor()
             ->getMock();
 
@@ -60,7 +61,7 @@ class ClientTest extends \PHPUnit_Framework_TestCase
 
     public function testDeleteIndex()
     {
-        $index = $this->getMockBuilder('Elastica_Index')
+        $index = $this->getMockBuilder('Elastica\Index')
             ->disableOriginalConstructor()
             ->getMock();
 

@@ -1,135 +1,66 @@
 <?php
+
 namespace Doctrine\Tests\Search;
 
-use Doctrine\Search\SearchManager;
-use Doctrine\Search\Configuration;
-use Doctrine\Search\Mapping\ClassMetadata;
-
-use Doctrine\Tests\Search\Documents\BlogPost;
-
-
-class SearchManagerTest extends \PHPUnit_Framework_TestCase
+class SearchManagerTest extends \Doctrine\Tests\Search\AbstractSearchTestCase
 {
-    /**
-     * @var Doctrine\Search\Mapping\ClassMetadataFactory
-     */
-    private $metadataFactory;
-
-    /**
-     * @var Doctrine\Search\ElasticSearch\Client
-     */
-    private $searchClient;
-
-    /**
-     * @var Doctrine\Search\Configuration
-     */
-    private $configuration;
-
-    /**
-     * @var SearchManager
-     */
-    protected $sm;
-
-    /**
-     * Sets up the fixture, for example, opens a network connection.
-     * This method is called before a test is executed.
-     */
-    protected function setUp()
-    {
-        $this->metadataFactory = $this->getMock('Doctrine\\Search\\Mapping\\ClassMetadataFactory');
-
-        $this->searchClient = $this->getMock('Doctrine\\Search\\ElasticSearch\\Client', array(), array(), '', false);
-
-        $this->configuration = $this->getMock('Doctrine\\Search\\Configuration');
-        $this->configuration->expects($this->once())
-              ->method('getClassMetadataFactory')
-              ->will($this->returnValue($this->metadataFactory));
-
-        $this->configuration->expects($this->once())
-              ->method('getMetadataCacheImpl')
-              ->will($this->returnValue($this->getMock('Doctrine\\Common\\Cache\\ArrayCache')));
-
-        $this->sm = new SearchManager($this->configuration, $this->searchClient);
-    }
-
-    /**
-     * Tests if the returned configuration is a Doctrine\\Search\\Configuration
-     */
     public function testGetConfiguration()
     {
-        $this->assertInstanceOf('Doctrine\\Search\\Configuration', $this->sm->getConfiguration());
+        $this->assertInstanceOf('Doctrine\Search\Configuration', $this->sm->getConfiguration());
     }
 
-    public function testGetClassMetadata()
+    public function testGetClient()
     {
-        $classMetadata = new ClassMetadata(BlogPost::CLASSNAME);
-
-        $this->metadataFactory->expects($this->once())
-            ->method('getMetadataFor')
-            ->with('Some\Class')
-            ->will($this->returnValue($classMetadata));
-
-        $this->assertEquals($classMetadata, $this->sm->getClassMetadata('Some\Class'));
+        $this->assertInstanceOf('Doctrine\Search\SearchClientInterface', $this->sm->getClient());
     }
 
-    public function testGetClassMetadataFactory()
+    public function testGetMetadataFactory()
     {
-        $mdf = $this->sm->getClassMetadataFactory();
-        $this->assertInstanceOf('Doctrine\\Search\\Mapping\\ClassMetadataFactory', $mdf);
+        $this->assertInstanceOf('Doctrine\Search\Mapping\ClassMetadataFactory', $this->sm->getMetadataFactory());
     }
 
-    /**
-     * @todo Implement testFind().
-     */
-    public function testFind()
+    public function testGetUnitOfWork()
     {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
+        $this->assertInstanceOf('Doctrine\Search\UnitOfWork', $this->sm->getUnitOfWork());
+    }
+
+    public function testGetEventManager()
+    {
+        $this->assertInstanceOf('Doctrine\Common\EventManager', $this->sm->getEventManager());
+    }
+
+    public function testGetEntityManager()
+    {
+        $this->assertInstanceOf('Doctrine\Common\Persistence\ObjectManager', $this->sm->getEntityManager());
+    }
+
+    public function testGetSerializer()
+    {
+        $this->assertInstanceOf('Doctrine\Search\SerializerInterface', $this->sm->getSerializer());
+    }
+
+    public function testCreateQuery()
+    {
+        $this->assertInstanceOf('Doctrine\Search\Query', $this->sm->createQuery());
+    }
+
+    static public function dataMethodsAffectedByNoObjectArguments()
+    {
+        return array(
+            array('persist'),
+            array('remove'),
+
+            //array('merge'),
+            //array('refresh'),
+            //array('detach')
         );
     }
 
     /**
-     * @todo Implement testPersist().
+     * @dataProvider dataMethodsAffectedByNoObjectArguments
+     * @expectedException Doctrine\Search\Exception\UnexpectedTypeException
      */
-    public function testPersist()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @todo Implement testRemove().
-     */
-    public function testRemove()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @todo Implement testBulk().
-     */
-    public function testBulk()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
-    }
-
-    /**
-     * @todo Implement testCommit().
-     */
-    public function testCommit()
-    {
-        // Remove the following lines when you implement this test.
-        $this->markTestIncomplete(
-          'This test has not been implemented yet.'
-        );
+    public function testThrowsExceptionOnNonObjectValues($methodName) {
+        $this->sm->$methodName(null);
     }
 }
