@@ -127,11 +127,26 @@ class ClassMetadata implements ClassMetadataInterface
      */
     public $identifier;
 
+    /**
+     * NamingStrategy determining the default column and table names
+     *
+     * @var NamingStrategy\NamingStrategyInterface
+     */
+    protected $namingStrategy;
 
-    public function __construct($documentName)
+    /**
+     * Initializes a new ClassMetadata instance that will hold the object-relational mapping
+     * metadata of the class with the given name.
+     *
+     * @param string $entityName The name of the entity class the new instance is used for.
+     * @param NamingStrategy $namingStrategy
+     */
+    public function __construct($entityName, NamingStrategy\NamingStrategyInterface $namingStrategy = null)
     {
-        $this->className = $documentName;
-        $this->reflClass = new \ReflectionClass($documentName);
+        $this->className = $entityName;
+        $this->reflClass = new \ReflectionClass($entityName);
+
+        $this->namingStrategy = $namingStrategy ?: new NamingStrategy\Literal();
     }
 
     /** Determines which fields get serialized.
