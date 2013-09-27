@@ -19,15 +19,17 @@
 
 namespace Doctrine\Search\ElasticSearch;
 
-
-
 use Doctrine\Search\SearchClientInterface;
 use Doctrine\Search\Mapping\ClassMetadata;
+use Doctrine\Search\Exception\NoResultException;
 use Elastica\Client as ElasticaClient;
 use Elastica\Type\Mapping;
 use Elastica\Document;
 use Elastica\Index;
 use Elastica\Query\MatchAll;
+use Elastica\Query\Term;
+use Elastica\Exception\NotFoundException;
+use Elastica\Search;
 
 /**
  * SearchManager for ElasticSearch-Backend
@@ -50,7 +52,7 @@ class Client implements SearchClientInterface
     {
         $this->client = $client;
     }
-
+    
     /**
      * {@inheritDoc}
      */
@@ -87,12 +89,60 @@ class Client implements SearchClientInterface
     /**
      * {@inheritDoc}
      */
-    public function find($index, $type, $query)
+    public function find($index, $type, $id)
+    {
+        try {
+            $type = $this->getIndex($index)->getType($type);
+            $document = $type->getDocument($id);
+        } catch (NotFoundException $ex) {
+            throw new NoResultException();
+        }
+        
+        return $document;
+    }
+    
+    public function findOneBy($index, $type, $key, $value)
+    {
+        $query = new Term();
+        $query->setTerm($key, $value);
+        
+        $results = $this->search($query, $index, $type);
+        
+        if (!$results->count()) {
+            throw new NoResultException();
+        }
+        
+        return $results[0];
+    }
+    
+    /**
+     * {@inheritDoc}
+     */
+    public function findAll($index, $type)
     {
         $type = $this->getIndex($index)->getType($type);
-        return $type->search($query);
+        //TODO: override paging limit
+        return $type->createSearch()->search();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public function search($query, $index = null, $type = null)
+    {
+        $searchQuery = new Search($this->client);
+        
+        if ($index) {
+            $indexObject = $this->getIndex($index);
+            $searchQuery->addIndex($indexObject);
+            if ($type) {
+                $searchQuery->addType($indexObject->getType($type));
+            }
+        }
+        
+        return $searchQuery->search($query);
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -130,6 +180,9 @@ class Client implements SearchClientInterface
         $mapping = new Mapping($type, $properties);
         $mapping->disableSource($metadata->source);
         $mapping->setParam('_boost', array('name' => '_boost', 'null_value' => $metadata->boost));
+        if (isset($metadata->parent)) {
+            $mapping->setParent($metadata->parent);
+        }
         $mapping->send();
 
         return $type;
