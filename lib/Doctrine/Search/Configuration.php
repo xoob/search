@@ -29,6 +29,8 @@ use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
 use Doctrine\Search\Mapping\ClassMetadataFactory;
 use Doctrine\Search\Mapping\Driver\AnnotationDriver;
+use Doctrine\Search\Mapping\NamingStrategy\NamingStrategyInterface;
+use Doctrine\Search\Mapping\NamingStrategy\Literal as LiteralNamingStrategy;
 use Doctrine\Search\SerializerInterface;
 use Doctrine\Search\Serializer\CallbackSerializer;
 
@@ -195,5 +197,29 @@ class Configuration
         return isset($this->attributes['entityManager'])
             ? $this->attributes['entityManager']
             : null;
+    }
+
+    /**
+     * Set naming strategy
+     *
+     * @param NamingStrategyInterface $namingStrategy
+     */
+    public function setNamingStrategy(NamingStrategyInterface $namingStrategy)
+    {
+        $this->attributes['namingStrategy'] = $namingStrategy;
+    }
+
+    /**
+     * Get naming strategy or default
+     *
+     * @return NamingStrategyInterface
+     */
+    public function getNamingStrategy()
+    {
+        if (!isset($this->attributes['namingStrategy'])) {
+            $this->attributes['namingStrategy'] = new LiteralNamingStrategy();
+        }
+
+        return $this->attributes['namingStrategy'];
     }
 }

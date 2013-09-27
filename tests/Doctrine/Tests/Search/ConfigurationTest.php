@@ -37,14 +37,6 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase
 
     }
 
-    /**
-     * @expectedException PHPUnit_Framework_Error
-     */
-    public function testSetMetadataCacheImplWrongParameter()
-    {
-        $this->configuration->setMetadataCacheImpl(array());
-    }
-
     public function testSetMetadataCacheImpl()
     {
         $mockedMetadataCacheImpl = $this->getMock('\Doctrine\Common\Cache\Cache');
@@ -60,14 +52,6 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase
         $this->assertInstanceOf('\Doctrine\Search\Mapping\Driver\AnnotationDriver', $defaultAnnotationDriver);
     }
 
-    /**
-     * @expectedException PHPUnit_Framework_Error
-     */
-    public function testNewDefaultAnnotationDriverWrongParameter()
-    {
-        $this->configuration->newDefaultAnnotationDriver(new \StdClass());
-    }
-
     public function testSetClassMetadataFactoryName()
     {
         $this->configuration = new Configuration();
@@ -81,5 +65,13 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase
         $this->configuration = new Configuration();
         $className = $this->configuration->getClassMetadataFactoryName();
         $this->assertEquals($className, 'Doctrine\Search\Mapping\ClassMetadataFactory');
+    }
+
+    public function testSetGetNamingStrategy()
+    {
+        $this->assertInstanceOf('Doctrine\Search\Mapping\NamingStrategy\NamingStrategyInterface', $this->configuration->getNamingStrategy());
+        $namingStrategy = $this->getMock('Doctrine\Search\Mapping\NamingStrategy\Dash');
+        $this->configuration->setNamingStrategy($namingStrategy);
+        $this->assertSame($namingStrategy, $this->configuration->getNamingStrategy());
     }
 }

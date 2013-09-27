@@ -20,6 +20,8 @@
 namespace Doctrine\Search\Mapping;
 
 use Doctrine\Common\Persistence\Mapping\ClassMetadata as ClassMetadataInterface;
+use Doctrine\Search\Mapping\NamingStrategy\NamingStrategyInterface;
+use Doctrine\Search\Mapping\NamingStrategy\Literal as LiteralNamingStrategy;
 
 /**
  * A <tt>ClassMetadata</tt> instance holds all the object-document mapping metadata
@@ -141,12 +143,12 @@ class ClassMetadata implements ClassMetadataInterface
      * @param string $entityName The name of the entity class the new instance is used for.
      * @param NamingStrategy $namingStrategy
      */
-    public function __construct($entityName, NamingStrategy\NamingStrategyInterface $namingStrategy = null)
+    public function __construct($entityName, NamingStrategyInterface $namingStrategy = null)
     {
         $this->className = $entityName;
         $this->reflClass = new \ReflectionClass($entityName);
 
-        $this->namingStrategy = $namingStrategy ?: new NamingStrategy\Literal();
+        $this->namingStrategy = $namingStrategy ?: new LiteralNamingStrategy();
     }
 
     /** Determines which fields get serialized.
