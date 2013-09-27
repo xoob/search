@@ -21,11 +21,16 @@ namespace Doctrine\Search;
 
 use Doctrine\Common\Cache\Cache;
 use Doctrine\Common\Cache\ArrayCache;
-use Doctrine\Search\Mapping\ClassMetadataFactory;
+use Doctrine\Common\Annotations\AnnotationRegistry;
+use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Annotations\CachedReader;
+use Doctrine\Common\Annotations\SimpleAnnotationReader;
+use Doctrine\Common\Persistence\ObjectManager;
 use Doctrine\Common\Persistence\Mapping\Driver\MappingDriver;
+use Doctrine\Search\Mapping\ClassMetadataFactory;
+use Doctrine\Search\Mapping\Driver\AnnotationDriver;
 use Doctrine\Search\SerializerInterface;
 use Doctrine\Search\Serializer\CallbackSerializer;
-use Doctrine\Common\Persistence\ObjectManager;
 
 /**
  * Configuration SearchManager
@@ -41,6 +46,16 @@ class Configuration
     private $attributes;
 
     /**
+     * Sets the driver that is used to store the class metadata .
+     *
+     * @param MappingDriver $concreteDriver
+     */
+    public function setMetadataDriverImpl(MappingDriver $concreteDriver)
+    {
+        $this->attributes['concreteMetadataDriver'] = $concreteDriver;
+    }
+
+    /**
      * Gets the cache driver implementation that is used for the mapping metadata.
      * (Annotation is the default)
      *
@@ -51,18 +66,34 @@ class Configuration
         if (!isset($this->attributes['concreteMetadataDriver'])) {
             $this->attributes['concreteMetadataDriver'] = $this->newDefaultAnnotationDriver();
         }
-
         return $this->attributes['concreteMetadataDriver'];
     }
 
     /**
-     * Sets the driver that is used to store the class metadata .
+     * Add a new default annotation driver with a correctly configured annotation reader. If $useSimpleAnnotationReader
+     * is true, the notation `@Entity` will work, otherwise, the notation `@ORM\Entity` will be supported.
      *
-     * @param MappingDriver $concreteDriver
+     * @param array $paths
+     * @param bool $useSimpleAnnotationReader
+     * @return AnnotationDriver
      */
-    public function setMetadataDriverImpl(MappingDriver $concreteDriver)
+    public function newDefaultAnnotationDriver($paths = array(), $useSimpleAnnotationReader = true)
     {
-        $this->attributes['concreteMetadataDriver'] = $concreteDriver;
+        AnnotationRegistry::registerFile(__DIR__ . '/Mapping/Driver/DoctrineAnnotations.php');
+
+        if ($useSimpleAnnotationReader) {
+            // Register the annotations in the AnnotationRegistry
+            $reader = new SimpleAnnotationReader();
+            $reader->addNamespace('Doctrine\Search\Mapping\Annotations');
+            $cachedReader = new CachedReader($reader, new ArrayCache());
+
+            return new AnnotationDriver($cachedReader, (array) $paths);
+        }
+
+        return new AnnotationDriver(
+            new CachedReader(new AnnotationReader(), new ArrayCache()),
+            (array) $paths
+        );
     }
 
     /**
@@ -82,23 +113,10 @@ class Configuration
      */
     public function getMetadataCacheImpl()
     {
-        return isset($this->attributes['metadataCacheImpl'])
-            ? $this->attributes['metadataCacheImpl']
-            : new ArrayCache();
-    }
-
-    /**
-     * Add a new default annotation driver with a correctly configured annotation reader.
-     *
-     * @param array $paths
-     *
-     * @return Mapping\Driver\AnnotationDriver
-     */
-    public function newDefaultAnnotationDriver(array $paths = array())
-    {
-        $reader = new \Doctrine\Common\Annotations\AnnotationReader();
-
-        return new \Doctrine\Search\Mapping\Driver\AnnotationDriver($reader, $paths);
+        if (!isset($this->attributes['metadataCacheImpl'])) {
+            $this->attributes['metadataCacheImpl'] = new ArrayCache();
+        }
+        return $this->attributes['metadataCacheImpl'];
     }
 
     /**
@@ -121,7 +139,6 @@ class Configuration
         if (!isset($this->attributes['classMetadataFactoryName'])) {
             $this->attributes['classMetadataFactoryName'] = 'Doctrine\Search\Mapping\ClassMetadataFactory';
         }
-
         return $this->attributes['classMetadataFactoryName'];
     }
 
@@ -156,10 +173,10 @@ class Configuration
      */
     public function getEntitySerializer()
     {
-        if (isset($this->attributes['serializer'])) {
-            return $this->attributes['serializer'];
+        if (!isset($this->attributes['serializer'])) {
+            $this->attributes['serializer'] = new CallbackSerializer();
         }
-        return new CallbackSerializer();
+        return $this->attributes['serializer'];
     }
 
     /**
@@ -175,8 +192,8 @@ class Configuration
      */
     public function getEntityManager()
     {
-        if (isset($this->attributes['entityManager'])) {
-            return $this->attributes['entityManager'];
-        }
+        return isset($this->attributes['entityManager'])
+            ? $this->attributes['entityManager']
+            : null;
     }
 }

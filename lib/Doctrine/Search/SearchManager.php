@@ -19,15 +19,15 @@
 
 namespace Doctrine\Search;
 
+use Doctrine\Common\EventManager;
 use Doctrine\Common\Persistence\ObjectManager;
-use Doctrine\Search\SearchClientInterface;
 use Doctrine\Search\Configuration;
+use Doctrine\Search\EntityRepository;
+use Doctrine\Search\Query;
+use Doctrine\Search\SearchClientInterface;
+use Doctrine\Search\UnitOfWork;
 use Doctrine\Search\Exception\UnexpectedTypeException;
 use Doctrine\Search\Exception\InvalidHydrationModeException;
-use Doctrine\Search\EntityRepository;
-use Doctrine\Search\UnitOfWork;
-use Doctrine\Search\Query;
-use Doctrine\Common\EventManager;
 
 /**
  * Interface for a Doctrine SearchManager class to implement.
@@ -88,22 +88,26 @@ class SearchManager implements ObjectManager
      *
      * @param Configuration         $config
      * @param SearchClientInterface $client
+     * @param EventManager          $eventManager
      */
-    public function __construct(Configuration $config, SearchClientInterface $client, EventManager $eventManager)
+    public function __construct(Configuration $config, SearchClientInterface $client, EventManager $eventManager = null)
     {
+        if ($eventManager === null) {
+            $eventManager = new EventManager();
+        }
+
         $this->configuration = $config;
-        $this->client = $client;
-        $this->eventManager = $eventManager;
+        $this->client        = $client;
+        $this->eventManager  = $eventManager;
 
         $this->metadataFactory = $this->configuration->getClassMetadataFactory();
         $this->metadataFactory->setSearchManager($this);
         $this->metadataFactory->setConfiguration($this->configuration);
         $this->metadataFactory->setCacheDriver($this->configuration->getMetadataCacheImpl());
 
-        $this->serializer = $this->configuration->getEntitySerializer();
+        $this->unitOfWork    = new UnitOfWork($this);
+        $this->serializer    = $this->configuration->getEntitySerializer();
         $this->entityManager = $this->configuration->getEntityManager();
-        
-        $this->unitOfWork = new UnitOfWork($this);
     }
 
     /**

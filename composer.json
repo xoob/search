@@ -8,11 +8,11 @@
 
     "require": {
         "php": ">=5.3.2",
-        "doctrine/common": "2.3.*"
+        "doctrine/common": "~2.4.0"
     },
     "require-dev": {
-        "ruflin/Elastica": "0.19.*",
-        "doctrine/orm": "2.3.*",
+        "ruflin/Elastica": "~0.90.2.0",
+        "doctrine/orm": "~2.4.0",
         "doctrine/mongodb": "1.0.*",
         "doctrine/mongodb-odm": "1.0.*"
     },
